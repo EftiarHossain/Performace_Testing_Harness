@@ -20,3 +20,15 @@ export function setup(): unknown {
 export default function (data: unknown): void {
   runIteration(context.workload, service.transactions, data);
 }
+
+// tools/run.js normalises the summary in Node, where that logic can be unit-tested.
+// Returning only a file also suppresses k6's console summary, which the wrapper
+// replaces with its own report.
+export function handleSummary(data: Record<string, unknown>): Record<string, string> {
+  const file = __ENV.HARNESS_SUMMARY_FILE;
+  if (!file) return { stdout: 'HARNESS_SUMMARY_FILE is not set; no summary written.\n' };
+  // setup() data holds auth tokens and must never reach a results file.
+  const safe = { ...data };
+  delete safe.setup_data;
+  return { [file]: JSON.stringify(safe) };
+}

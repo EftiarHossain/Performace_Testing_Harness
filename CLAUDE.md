@@ -47,8 +47,10 @@ Only commands listed here are known to work; add to this list as milestones land
 - `npm run typecheck`, `npm run lint`, `npm run format`, `npm test`: the individual steps.
 - `node mock/server.js`: start the mock system under test on `http://127.0.0.1:3333` (designed capacity 200 req/s for cost-1.0 requests; tune with `MOCK_WORKERS`, `MOCK_SERVICE_MS`, `MOCK_QUEUE_LIMIT`, `MOCK_JITTER`, `MOCK_PORT`). Stop it after use.
 - `cp .env.example .env`: one-time setup; holds `SUT_PASSWORD` for the test users.
-- `node tools/run.js <profile>`: run a profile (`smoke`, `average-load`, `stress`, `spike`, `soak`, `breakpoint`, `capacity`) against the `local` environment and `example` service. Needs the mock running. Options: `--env`, `--service`, `--time-scale <0..1>` (shorten stages for development), `--vus <n>`, `--allow-production`. Exit 0 pass, 99 thresholds failed, 2 did not start.
+- `node tools/run.js <profile>`: run a profile (`smoke`, `average-load`, `stress`, `spike`, `soak`, `breakpoint`, `capacity`) against the `local` environment and `example` service. Needs the mock running. Options: `--env`, `--service`, `--time-scale <0..1>` (shorten stages for development), `--vus <n>`, `--allow-production`. Exit 0 pass, 99 SLO thresholds failed, 3 invalid run, 2 did not start. Each run writes `results/<UTC timestamp>_<service>_<profile>/result.json`.
 - Verification-sized runs: `node tools/run.js smoke` (30 s) and `node tools/run.js average-load --time-scale 0.03` (67 s).
+- Deliberately invalid run (generator starved of VUs): `node tools/run.js average-load --time-scale 0.02 --vus 1`, expected exit 3.
+- When logging a run to a file, read only the report: `sed -n '/^Run 2/,$p' <log>`. k6 progress output is very long.
 - `k6 version`, `node --version`: environment check.
 
 ## Code placement
