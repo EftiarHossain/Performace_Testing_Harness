@@ -17,7 +17,7 @@ It ships with a small mock service whose capacity is known by construction, so y
 
 ## Quick start
 
-Everything below runs against the bundled mock service on `127.0.0.1`. It takes about five minutes.
+Everything below runs against the bundled mock service on `127.0.0.1`. All three steps together take about six minutes.
 
 ```sh
 npm ci
