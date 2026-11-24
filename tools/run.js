@@ -14,10 +14,9 @@ import { validateWorkload } from '../src/lib/workload.js';
 import { assessGenerator, sampleProcess } from './lib/generator.js';
 import { renderReport } from './lib/report.js';
 import { buildResult, stableHash } from './lib/result.js';
+import { ROOT } from './lib/runs.js';
 import { sampleServerStats } from './lib/server-stats.js';
 import { readSummary } from './lib/summary.js';
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const USAGE = `Usage: node tools/run.js <profile> [options]
 
@@ -34,7 +33,7 @@ Exit codes: 0 pass, 99 SLO thresholds failed, 3 run invalid (not trustworthy),
 2 did not start, anything else is k6's own error code.
 `;
 
-export const EXIT = { pass: 0, fail: 99, invalid: 3, notStarted: 2 };
+const EXIT = { pass: 0, fail: 99, invalid: 3, notStarted: 2 };
 
 /** @param {string} command @param {string[]} args */
 function capture(command, args) {

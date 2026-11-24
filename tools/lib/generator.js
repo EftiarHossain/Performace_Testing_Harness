@@ -3,10 +3,10 @@
 import { execFile } from 'node:child_process';
 
 /** Sustained CPU above this share of all cores means the generator is the bottleneck. */
-export const CPU_SATURATION_FRACTION = 0.8;
+const CPU_SATURATION_FRACTION = 0.8;
 /** Consecutive samples above the limit before calling it sustained (ignores brief spikes). */
-export const SATURATED_SAMPLES = 3;
-export const MEMORY_SATURATION_FRACTION = 0.9;
+const SATURATED_SAMPLES = 3;
+const MEMORY_SATURATION_FRACTION = 0.9;
 
 /**
  * @typedef {{ cpuPercent: number, rssBytes: number }} Sample

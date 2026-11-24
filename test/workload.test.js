@@ -1,13 +1,21 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { mixShares, pickTransaction, validateWorkload } from '../src/lib/workload.js';
+import { pickTransaction, validateWorkload } from '../src/lib/workload.js';
 
 const example = () => JSON.parse(readFileSync('config/services/example/workload.json', 'utf8'));
 
-test('the example workload model is valid and its mix sums to 1', () => {
-  const shares = mixShares(validateWorkload(example()));
-  assert.deepEqual(shares, { list_items: 0.5, read_item: 0.35, create_item: 0.1, login: 0.05 });
+test('the example workload model is valid', () => {
+  const workload = validateWorkload(example());
+  assert.deepEqual(
+    workload.transactions.map((tx) => [tx.name, tx.weight]),
+    [
+      ['list_items', 50],
+      ['read_item', 35],
+      ['create_item', 10],
+      ['login', 5],
+    ],
+  );
 });
 
 test('validation names the problem', () => {

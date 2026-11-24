@@ -13,17 +13,18 @@ A reusable k6 harness for performance and capacity engineers. The build brief is
 ## Layout
 
 ```
-config/        environments (allowlists), workload models, SLOs, profiles
-src/           k6 test code (TypeScript, run natively by k6)
-  lib/         core library; pure logic has no k6 imports so Node can test it
-  profiles/    smoke, average-load, stress, spike, soak, breakpoint, capacity
-  main.ts      single entry script, profile selected by parameter
+config/        environments (allowlists), profiles, compare and capacity settings
+  services/    <name>/workload.json, slo.json and data files
+src/main.ts    single k6 entry script; service and profile selected by HARNESS_* variables
+src/lib/       core library; pure logic (.js) has no k6 imports so Node can test it
+src/services/  one module per service, registered in index.ts
 mock/          dependency-free Node service with a known, configurable capacity
-tools/         plain Node ESM: run wrapper, results normalise, compare, capacity
+tools/         CLIs: run, baseline, compare, capacity, with-mock
+  lib/         result normalisation, validity, compare, capacity analysis and report
 test/          node:test unit tests
 results/       run directories (git-ignored)
-baselines/     stored baselines
-docs/          methodology, runbook, templates
+baselines/     committed baselines: <service>/<environment>/<profile>.json
+docs/          methodology, onboarding runbook, troubleshooting, k6 compatibility, templates/
 .github/       CI workflows (PR smoke, scheduled regression compare)
 ```
 

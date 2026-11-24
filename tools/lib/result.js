@@ -13,7 +13,15 @@ import {
 export const SCHEMA_VERSION = 1;
 
 /** A steady window that started fewer than this share of its planned iterations was not really tested at that rate. */
-export const MIN_ACHIEVED_FRACTION = 0.98;
+const MIN_ACHIEVED_FRACTION = 0.98;
+
+/**
+ * k6's reported run duration can land a few milliseconds either side of the plan's
+ * length; without slack a run that finished normally could lose its last window.
+ * Kept small so that a run aborted shortly before a window's end is not counted as
+ * having completed it.
+ */
+const COMPLETION_TOLERANCE_SECONDS = 0.1;
 
 /** k6 exit code for "thresholds failed", which is also what an abortOnFail stop returns. */
 const K6_THRESHOLDS_FAILED = 99;
@@ -79,7 +87,9 @@ export function buildResult({ summary, plan, profile, workload, slo, k6ExitCode,
   // A window only counts if the run lasted until its end; an abort threshold in an
   // exploratory profile cuts the plan short, and later windows hold partial data.
   const windows = plan.windows.map((window) => {
-    const complete = summary.durationSeconds >= window.startSeconds + window.durationSeconds;
+    const complete =
+      summary.durationSeconds + COMPLETION_TOLERANCE_SECONDS >=
+      window.startSeconds + window.durationSeconds;
     const tags = { scenario: window.scenario };
     return {
       scenario: window.scenario,

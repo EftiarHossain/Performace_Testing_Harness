@@ -53,16 +53,6 @@ export function validateWorkload(raw) {
 }
 
 /**
- * Each transaction's share of traffic, summing to 1.
- * @param {Workload} workload
- * @returns {Record<string, number>}
- */
-export function mixShares(workload) {
-  const total = workload.transactions.reduce((sum, tx) => sum + tx.weight, 0);
-  return Object.fromEntries(workload.transactions.map((tx) => [tx.name, tx.weight / total]));
-}
-
-/**
  * Weighted random choice of the next transaction.
  * @param {Workload} workload
  * @param {number} random Uniform value in [0, 1).

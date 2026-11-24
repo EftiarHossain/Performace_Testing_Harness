@@ -19,10 +19,6 @@ export function rowForVu<T>(rows: T[]): T {
   return rows[(exec.vu.idInTest - 1) % rows.length] as T;
 }
 
-export function randomRow<T>(rows: T[]): T {
-  return rows[Math.floor(Math.random() * rows.length)] as T;
-}
-
 export function randomInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
 }

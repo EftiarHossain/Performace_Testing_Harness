@@ -147,6 +147,15 @@ test('a saturated load generator makes the run invalid', () => {
   assert.match(memory.problems[0] ?? '', /memory/);
 });
 
+test('a run that ends a few milliseconds short of the plan keeps its last window', () => {
+  // The scaled plan is 22 s long; k6 may report 21.98 s for a run that finished normally.
+  const result = resultFor(legacySummary({ seconds: 21.98 }));
+  assert.equal(result.aborted, false);
+  assert.ok(result.windows.every((w) => w.complete));
+  // Well short of the plan is a real early stop.
+  assert.equal(resultFor(legacySummary({ seconds: 20 })).aborted, true);
+});
+
 test('a k6 error exit code is reported as an error, not a failure', () => {
   assert.equal(resultFor(legacySummary(), { exit: 107 }).verdict, 'error');
 });

@@ -7,7 +7,7 @@ const fmt = (value, digits = 0) =>
 /**
  * @param {string[][]} rows First row is the header.
  */
-export function table(rows) {
+function table(rows) {
   const widths = (rows[0] ?? []).map((_, column) =>
     Math.max(...rows.map((row) => (row[column] ?? '').length)),
   );
