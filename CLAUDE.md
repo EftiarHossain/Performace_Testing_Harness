@@ -40,6 +40,14 @@ docs/          methodology, runbook, templates
 
 ## Commands
 
-Commands are added here as each milestone lands; only commands listed here are known to work.
+Only commands listed here are known to work; add to this list as milestones land.
 
+- `npm install`: install dev tooling (types, lint, format).
+- `npm run check`: type-check, lint, format check and unit tests. Run before every commit.
+- `npm run typecheck`, `npm run lint`, `npm run format`, `npm test`: the individual steps.
 - `k6 version`, `node --version`: environment check.
+
+## Code placement
+
+- Logic needed by both k6 and Node (anything pure) goes in `src/lib/*.js` with JSDoc types and no k6 imports. It is type-checked by `tsc` and unit-tested with `node:test` in `test/*.test.js`.
+- Code that touches k6 APIs is TypeScript (`.ts`). Import paths always include the file extension, which k6 requires.
