@@ -14,6 +14,7 @@ import { validateWorkload } from '../src/lib/workload.js';
 import { assessGenerator, sampleProcess } from './lib/generator.js';
 import { renderReport } from './lib/report.js';
 import { buildResult, stableHash } from './lib/result.js';
+import { sampleServerStats } from './lib/server-stats.js';
 import { readSummary } from './lib/summary.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,6 +27,7 @@ Options:
   --time-scale <0..1>   Shorten every stage, for development runs only (default: 1)
   --vus <n>             Force pre-allocated VUs per scenario (default: sized from the workload)
   --allow-production    Permit an environment marked production
+  --otel                Also stream k6 metrics over OpenTelemetry (configure with K6_OTEL_* variables)
   --help                Show this help
 
 Exit codes: 0 pass, 99 SLO thresholds failed, 3 run invalid (not trustworthy),
@@ -63,6 +65,7 @@ export function parseCli(argv) {
       'time-scale': { type: 'string', default: '1' },
       vus: { type: 'string' },
       'allow-production': { type: 'boolean', default: false },
+      otel: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
   });
@@ -82,6 +85,7 @@ export function parseCli(argv) {
     timeScale,
     vus,
     allowProduction: values['allow-production'] === true,
+    otel: values.otel === true,
   };
 }
 
@@ -130,7 +134,22 @@ async function main() {
       (cli.timeScale < 1 ? ` (time-scale ${cli.timeScale}: development run, not a full test)` : ''),
   );
 
-  const child = spawn('k6', ['run', path.join(ROOT, 'src/main.ts')], {
+  const k6Args = [
+    'run',
+    // k6 reports anonymous usage statistics by default; a test harness should not
+    // make outbound calls its operator did not ask for.
+    '--no-usage-report',
+    // Every metric sample carries the run ID, so exported metrics can be matched to this run.
+    '--tag',
+    `testid=${runId}`,
+  ];
+  if (cli.otel) k6Args.push('--out', 'opentelemetry');
+  k6Args.push(path.join(ROOT, 'src/main.ts'));
+
+  const serverStats = environment.serverStatsUrl
+    ? sampleServerStats(environment.serverStatsUrl, path.join(runDir, 'server-stats.jsonl'))
+    : undefined;
+  const child = spawn('k6', k6Args, {
     stdio: 'inherit',
     env: {
       ...process.env,
@@ -150,6 +169,7 @@ async function main() {
     child.on('close', (code) => resolve(code ?? 1));
   });
   const samples = sampler?.stop() ?? [];
+  const serverStatsSummary = (await serverStats?.stop()) ?? null;
 
   if (!existsSync(summaryFile)) {
     // k6 failed before the end-of-test summary (script error, interrupted run).
@@ -188,10 +208,17 @@ async function main() {
       generatorHost: `${os.platform()}/${os.arch()}`,
     },
   });
+  /** @type {Record<string, unknown>} */ (result).serverStats = serverStatsSummary;
   writeFileSync(path.join(runDir, 'result.json'), `${JSON.stringify(result, null, 2)}\n`);
   writeFileSync(path.join(runDir, 'generator-samples.json'), `${JSON.stringify(samples)}\n`);
 
   console.log(`\n${renderReport(result)}`);
+  if (serverStatsSummary) {
+    console.log(
+      `Server stats: ${serverStatsSummary.samples} samples in ${serverStatsSummary.file}` +
+        (serverStatsSummary.errors > 0 ? ` (${serverStatsSummary.errors} failed polls)` : ''),
+    );
+  }
   console.log(`Result: ${path.relative(process.cwd(), path.join(runDir, 'result.json'))}`);
   if (result.verdict === 'error') return k6ExitCode;
   return EXIT[result.verdict];

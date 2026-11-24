@@ -1,0 +1,67 @@
+# Scheduled regression check: runs the average-load profile and compares it with
+# the committed baseline. As shipped it targets the bundled mock service, which
+# demonstrates the mechanism. To use it for a real system, point HARNESS_ENV at
+# your environment (hostnames and credentials from repository secrets), run on a
+# runner with a stable network path to it, and commit a baseline from that
+# environment with `node tools/baseline.js save <run>`.
+name: Performance regression
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Profile to run and compare
+        default: average-load
+      time_scale:
+        description: Time scale (must match the baseline's)
+        default: '0.05'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-regression
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PROFILE: ${{ inputs.profile || 'average-load' }}
+      TIME_SCALE: ${{ inputs.time_scale || '0.05' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: '1.6.1'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure test credentials
+        run: cp .env.example .env
+
+      # Exit code 0 pass, 99 SLO thresholds failed, 3 run invalid, 2 did not start.
+      - name: Run the profile against the mock service
+        run: node tools/with-mock.js node tools/run.js "$PROFILE" --time-scale "$TIME_SCALE"
+
+      # Exit code 0 no regression, 1 regression, 2 not comparable or no baseline.
+      - name: Compare with the committed baseline
+        run: node tools/compare.js latest
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-regression-results
+          path: results/
+          if-no-files-found: ignore

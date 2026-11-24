@@ -1,0 +1,52 @@
+# Runs on every pull request: static checks, unit tests, then the smoke profile
+# against the bundled mock service. It proves the harness and scripts work; it is
+# not a performance verdict on a real system.
+name: Performance smoke
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: grafana/setup-k6-action@v1
+        with:
+          k6-version: '1.6.1'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check, lint, format check and unit tests
+        run: npm run check
+
+      - name: Configure test credentials
+        run: cp .env.example .env
+
+      # Exit code 0 pass, 99 SLO thresholds failed, 3 run invalid, 2 did not start.
+      - name: Smoke test against the mock service
+        run: node tools/with-mock.js node tools/run.js smoke
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-smoke-results
+          path: results/
+          if-no-files-found: ignore

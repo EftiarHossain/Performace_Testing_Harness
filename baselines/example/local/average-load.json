@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "run": {
+    "id": "20261124-062819_example_average-load",
+    "startedAt": "2026-11-24T06:28:19.611Z",
+    "endedAt": "2026-11-24T06:30:12.167Z",
+    "service": "example",
+    "profile": "average-load",
+    "environment": "local",
+    "timeScale": 0.05,
+    "vuOverride": null,
+    "workloadVersion": "1",
+    "workloadHash": "4b138e94479a1195",
+    "sloHash": "0d04023dc20f49f7",
+    "profileHash": "77a5cb15581faee0",
+    "gitCommit": "97d94a9",
+    "gitDirty": true,
+    "k6Version": "v1.6.1",
+    "generatorHost": "darwin/arm64",
+    "k6ExitCode": 0,
+    "k6SummaryFormat": "legacy",
+    "measuredSeconds": 112.270449
+  },
+  "verdict": "pass",
+  "gate": true,
+  "aborted": false,
+  "validity": {
+    "valid": true,
+    "reasons": [],
+    "plannedIterations": 10050,
+    "droppedIterations": 0,
+    "generator": {
+      "samples": 112,
+      "cores": 8,
+      "cpuPercentAvg": 7.9,
+      "cpuPercentMax": 32.9,
+      "rssMbMax": 179.5,
+      "problems": []
+    }
+  },
+  "sloBreaches": [],
+  "steadySeconds": 90,
+  "transactions": {
+    "list_items": {
+      "transactions": 4483,
+      "failed": 0,
+      "failedRate": 0,
+      "successPerSecond": 49.81,
+      "latencyMs": {
+        "p99": 50,
+        "max": 94,
+        "avg": 40.98,
+        "min": 31,
+        "med": 41,
+        "p90": 47,
+        "p95": 48
+      },
+      "slo": {
+        "targets": {
+          "p95": 250,
+          "p99": 400,
+          "errorRate": 0.01
+        },
+        "breaches": []
+      }
+    },
+    "read_item": {
+      "transactions": 3201,
+      "failed": 0,
+      "failedRate": 0,
+      "successPerSecond": 35.57,
+      "latencyMs": {
+        "min": 15,
+        "med": 21,
+        "p90": 24,
+        "p95": 24,
+        "p99": 26,
+        "max": 48,
+        "avg": 20.83
+      },
+      "slo": {
+        "targets": {
+          "p95": 250,
+          "p99": 400,
+          "errorRate": 0.01
+        },
+        "breaches": []
+      }
+    },
+    "create_item": {
+      "transactions": 900,
+      "failed": 0,
+      "failedRate": 0,
+      "successPerSecond": 10,
+      "latencyMs": {
+        "p99": 97,
+        "max": 104,
+        "avg": 80.57,
+        "min": 64,
+        "med": 81,
+        "p90": 93,
+        "p95": 95
+      },
+      "slo": {
+        "targets": {
+          "p95": 300,
+          "p99": 500,
+          "errorRate": 0.01
+        },
+        "breaches": []
+      }
+    },
+    "login": {
+      "transactions": 416,
+      "failed": 0,
+      "failedRate": 0,
+      "successPerSecond": 4.62,
+      "latencyMs": {
+        "p90": 71,
+        "p95": 72,
+        "p99": 73,
+        "max": 93,
+        "avg": 61.5,
+        "min": 49,
+        "med": 61
+      },
+      "slo": {
+        "targets": {
+          "p95": 250,
+          "p99": 400,
+          "errorRate": 0.01
+        },
+        "breaches": []
+      }
+    }
+  },
+  "windows": [
+    {
+      "scenario": "p01_ramp",
+      "phase": "ramp",
+      "startSeconds": 0,
+      "durationSeconds": 15,
+      "targetRate": 100,
+      "preAllocatedVUs": 100,
+      "complete": true,
+      "plannedIterations": 750,
+      "iterations": 749,
+      "droppedIterations": 0,
+      "transactions": 749,
+      "failed": 0,
+      "failedRate": 0,
+      "successPerSecond": 49.93,
+      "latencyMs": {
+        "med": 37,
+        "p90": 65.2,
+        "p95": 82.6,
+        "p99": 94,
+        "max": 104,
+        "avg": 38.87,
+        "min": 16
+      }
+    },
+    {
+      "scenario": "p02_steady",
+      "phase": "steady",
+      "startSeconds": 15,
+      "durationSeconds": 90,
+      "targetRate": 100,
+      "preAllocatedVUs": 100,
+      "complete": true,
+      "plannedIterations": 9000,
+      "iterations": 9000,
+      "droppedIterations": 0,
+      "transactions": 9000,
+      "failed": 0,
+      "failedRate": 0,
+      "successPerSecond": 100,
+      "latencyMs": {
+        "med": 38,
+        "p90": 68,
+        "p95": 81,
+        "p99": 93,
+        "max": 104,
+        "avg": 38.72,
+        "min": 15
+      }
+    },
+    {
+      "scenario": "p03_ramp",
+      "phase": "ramp",
+      "startSeconds": 105,
+      "durationSeconds": 6,
+      "targetRate": 0,
+      "preAllocatedVUs": 100,
+      "complete": true,
+      "plannedIterations": 300,
+      "iterations": 299,
+      "droppedIterations": 0,
+      "transactions": 299,
+      "failed": 0,
+      "failedRate": 0,
+      "successPerSecond": 49.83,
+      "latencyMs": {
+        "p95": 85.1,
+        "p99": 95.04,
+        "max": 99,
+        "avg": 39.76,
+        "min": 17,
+        "med": 39,
+        "p90": 69.2
+      }
+    }
+  ],
+  "checks": [],
+  "serverStats": {
+    "file": "server-stats.jsonl",
+    "samples": 57,
+    "errors": 0,
+    "intervalMs": 2000
+  }
+}

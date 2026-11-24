@@ -8,6 +8,7 @@
  * @property {string} baseUrl
  * @property {string[]} allowedHosts
  * @property {boolean} production
+ * @property {string} [serverStatsUrl]  Optional JSON endpoint sampled during a run for server-side metrics.
  */
 
 /**
@@ -24,7 +25,7 @@ function interpolate(text, vars) {
 }
 
 /**
- * @param {Record<string, { baseUrl?: unknown, allowedHosts?: unknown, production?: unknown }>} environments
+ * @param {Record<string, { baseUrl?: unknown, allowedHosts?: unknown, production?: unknown, serverStatsUrl?: unknown }>} environments
  * @param {string} name
  * @param {Record<string, string | undefined>} vars
  * @returns {Environment}
@@ -45,6 +46,8 @@ export function resolveEnvironment(environments, name, vars) {
     baseUrl: interpolate(raw.baseUrl, vars).replace(/\/+$/, ''),
     allowedHosts: raw.allowedHosts.map((host) => interpolate(String(host), vars).toLowerCase()),
     production,
+    serverStatsUrl:
+      typeof raw.serverStatsUrl === 'string' ? interpolate(raw.serverStatsUrl, vars) : undefined,
   };
 }
 
@@ -71,6 +74,16 @@ export function assertTargetAllowed(environment, options = {}) {
     throw new Error(
       `Refusing to run: host "${host}" is not in the allowlist of environment ` +
         `"${environment.name}" (${environment.allowedHosts.join(', ') || 'empty'})`,
+    );
+  }
+  // Anything else the harness contacts in this environment is held to the same allowlist.
+  if (
+    environment.serverStatsUrl &&
+    !environment.allowedHosts.includes(hostOf(environment.serverStatsUrl))
+  ) {
+    throw new Error(
+      `Refusing to run: serverStatsUrl host "${hostOf(environment.serverStatsUrl)}" is not in the ` +
+        `allowlist of environment "${environment.name}"`,
     );
   }
   if (environment.production && !options.allowProduction) {
