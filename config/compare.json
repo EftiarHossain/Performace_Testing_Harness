@@ -1,0 +1,5 @@
+{
+  "latency": { "percentiles": ["med", "p95", "p99"], "relative": 0.1, "absoluteMs": 5 },
+  "errorRate": { "absolute": 0.005 },
+  "throughput": { "relative": 0.05 }
+}

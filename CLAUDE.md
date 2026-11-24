@@ -51,6 +51,8 @@ Only commands listed here are known to work; add to this list as milestones land
 - Verification-sized runs: `node tools/run.js smoke` (30 s) and `node tools/run.js average-load --time-scale 0.03` (67 s).
 - Deliberately invalid run (generator starved of VUs): `node tools/run.js average-load --time-scale 0.02 --vus 1`, expected exit 3.
 - When logging a run to a file, read only the report: `sed -n '/^Run 2/,$p' <log>`. k6 progress output is very long.
+- `node tools/baseline.js save <run|latest>`: store a passing run as the baseline for its service, environment and profile.
+- `node tools/compare.js <run|latest>`: compare with the stored baseline. Exit 0 no regression, 1 regression, 2 not comparable. To see a regression locally, restart the mock with `MOCK_SERVICE_MS=60` and rerun the same profile.
 - `k6 version`, `node --version`: environment check.
 
 ## Code placement

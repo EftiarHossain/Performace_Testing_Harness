@@ -15,7 +15,9 @@
     "test": "node --test test/",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "perf": "node tools/run.js",
-    "mock": "node mock/server.js"
+    "mock": "node mock/server.js",
+    "baseline": "node tools/baseline.js",
+    "compare": "node tools/compare.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
