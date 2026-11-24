@@ -5,7 +5,7 @@
   "description": "k6 harness for performance and capacity engineering: workload models, SLO thresholds, regression compare and capacity analysis.",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.12"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -13,7 +13,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node --test test/",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "perf": "node tools/run.js",
+    "mock": "node mock/server.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
