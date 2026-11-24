@@ -45,6 +45,7 @@ Only commands listed here are known to work; add to this list as milestones land
 - `npm install`: install dev tooling (types, lint, format).
 - `npm run check`: type-check, lint, format check and unit tests. Run before every commit.
 - `npm run typecheck`, `npm run lint`, `npm run format`, `npm test`: the individual steps.
+- `node mock/server.js`: start the mock system under test on `http://127.0.0.1:3333` (designed capacity 200 req/s for cost-1.0 requests; tune with `MOCK_WORKERS`, `MOCK_SERVICE_MS`, `MOCK_QUEUE_LIMIT`, `MOCK_JITTER`, `MOCK_PORT`). Stop it after use.
 - `k6 version`, `node --version`: environment check.
 
 ## Code placement
