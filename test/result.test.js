@@ -175,6 +175,18 @@ test('an exploratory profile that aborts early is valid up to the abort', () => 
     [true, true, false, false, false],
   );
   assert.match(renderReport(result), /stopped early by an abort threshold/);
+  // Stopped 0.5 s into the third window, a 1 s hold at 300/s.
+  assert.deepEqual(result.stoppedAt, { scenario: 'p03_steady', seconds: 2.5, approxRate: 300 });
+  assert.match(renderReport(result), /had reached about 300\/s when it stopped/);
+});
+
+test('a breakpoint ramp that aborts reports the load it had reached', () => {
+  // Breakpoint at time-scale 0.01 is one 12 s ramp from 0 to 500/s; stopped at 6 s.
+  const result = resultFor(legacySummary({ seconds: 6 }), { exit: 99, profile: 'breakpoint' });
+  assert.equal(result.verdict, 'pass');
+  assert.equal(result.aborted, true);
+  assert.deepEqual(result.stoppedAt, { scenario: 'p01_ramp', seconds: 6, approxRate: 250 });
+  assert.equal(resultFor(legacySummary()).stoppedAt, null);
 });
 
 test('transactions with no successes report null latency, not zero', () => {

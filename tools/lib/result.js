@@ -96,6 +96,7 @@ export function buildResult({ summary, plan, profile, workload, slo, k6ExitCode,
       phase: window.phase,
       startSeconds: window.startSeconds,
       durationSeconds: window.durationSeconds,
+      startRate: window.startRate,
       targetRate: window.targetRate,
       preAllocatedVUs: window.preAllocatedVUs,
       complete,
@@ -106,6 +107,26 @@ export function buildResult({ summary, plan, profile, workload, slo, k6ExitCode,
     };
   });
   const aborted = windows.some((window) => !window.complete);
+  // Where an early stop happened, by interpolating along the window that was running.
+  // Approximate: abort thresholds are evaluated on whole-run totals after a delay, so
+  // the system was already past its limit somewhat before this point.
+  const stoppedIn = windows.find((window) => !window.complete);
+  const stoppedAt = stoppedIn
+    ? (() => {
+        const elapsed = Math.min(
+          Math.max(summary.durationSeconds - stoppedIn.startSeconds, 0),
+          stoppedIn.durationSeconds,
+        );
+        const progress = elapsed / stoppedIn.durationSeconds;
+        return {
+          scenario: stoppedIn.scenario,
+          seconds: Math.round(summary.durationSeconds * 10) / 10,
+          approxRate: Math.round(
+            stoppedIn.startRate + (stoppedIn.targetRate - stoppedIn.startRate) * progress,
+          ),
+        };
+      })()
+    : null;
   const completeSteady = windows.filter((window) => window.complete && window.phase === 'steady');
   const steadySeconds = completeSteady.reduce((sum, window) => sum + window.durationSeconds, 0);
 
@@ -173,6 +194,7 @@ export function buildResult({ summary, plan, profile, workload, slo, k6ExitCode,
     verdict,
     gate: profile.gate,
     aborted,
+    stoppedAt,
     validity: {
       valid: reasons.length === 0,
       reasons,

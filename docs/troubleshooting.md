@@ -59,13 +59,13 @@ An SLO was breached. The report names each breach, for example `create_item p95 
 
 ## The capacity tool
 
-| Report says                                                 | Meaning and fix                                                                                                                                   |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `The knee was not reached`                                  | Every level was within limits. Raise `steps.to` in the `capacity` profile.                                                                        |
-| `was already outside its limits at the lowest level tested` | Lower `steps.from`, or the system has a problem unrelated to load; run smoke.                                                                     |
-| `The model does not describe this system well`              | The USL fit is poor, typical for a hard limit such as a fixed pool. Use the measured knee.                                                        |
-| The ceiling is higher than the knee by a wide margin        | With short holds, queues absorb excess load for the length of the hold and the level looks served. Use longer holds; do not use time-scaled runs. |
-| `Run stopped early by an abort threshold`                   | Expected once the system has clearly failed. Levels that did not complete are excluded.                                                           |
+| Report says                                                 | Meaning and fix                                                                                                                                                                                                                                                   |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `The knee was not reached`                                  | Every level was within limits. Raise `steps.to` in the `capacity` profile.                                                                                                                                                                                        |
+| `was already outside its limits at the lowest level tested` | Lower `steps.from`, or the system has a problem unrelated to load; run smoke.                                                                                                                                                                                     |
+| `The model does not describe this system well`              | The USL fit is poor, typical for a hard limit such as a fixed pool. Use the measured knee.                                                                                                                                                                        |
+| The ceiling is higher than the knee by a wide margin        | With short holds, queues absorb excess load for the length of the hold and the level looks served. Use longer holds; do not use time-scaled runs.                                                                                                                 |
+| `Run stopped early by an abort threshold`                   | Expected once the system has clearly failed. Levels that did not complete are excluded. The run report states the load reached at that point; abort thresholds use whole-run totals and a delay that `--time-scale` does not shorten, so the real limit is lower. |
 
 ## Reading results
 

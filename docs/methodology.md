@@ -98,15 +98,15 @@ _Code: `src/lib/plan.js`, `tools/lib/result.js`._
 
 ## The profiles
 
-| Profile        | Question it answers                                                   | How to read the result                                               |
-| -------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `smoke`        | Do the scripts, data and environment work?                            | Must pass before anything else is worth running.                     |
-| `average-load` | Does the system meet its SLOs at peak-hour load?                      | The baseline. Compare every later run against it.                    |
-| `stress`       | How does it behave above expected peak?                               | Look at how it degrades: gradually, or by falling over.              |
-| `spike`        | Does it survive a sudden burst and recover afterwards?                | Compare the last window (after the spike) with the first (before).   |
-| `soak`         | Does anything leak or degrade over hours?                             | Passing SLOs is not enough; check server-side memory, handles, disk. |
-| `breakpoint`   | Roughly where is the ceiling?                                         | Quick and coarse. The abort thresholds end the run.                  |
-| `capacity`     | What load can it sustain within its limits, and how much is headroom? | Feed it to `tools/capacity.js`.                                      |
+| Profile        | Question it answers                                                   | How to read the result                                                                                 |
+| -------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `smoke`        | Do the scripts, data and environment work?                            | Must pass before anything else is worth running.                                                       |
+| `average-load` | Does the system meet its SLOs at peak-hour load?                      | The baseline. Compare every later run against it.                                                      |
+| `stress`       | How does it behave above expected peak?                               | Look at how it degrades: gradually, or by falling over.                                                |
+| `spike`        | Does it survive a sudden burst and recover afterwards?                | Compare the last window (after the spike) with the first (before).                                     |
+| `soak`         | Does anything leak or degrade over hours?                             | Passing SLOs is not enough; check server-side memory, handles, disk.                                   |
+| `breakpoint`   | Roughly where is the ceiling?                                         | Quick and coarse. The report gives the load reached when the abort fired; the limit is at or below it. |
+| `capacity`     | What load can it sustain within its limits, and how much is headroom? | Feed it to `tools/capacity.js`.                                                                        |
 
 Gating profiles (smoke, average-load, soak) fail on an SLO breach. Exploratory profiles (stress, spike, breakpoint, capacity) are expected to breach SLOs, so they record them without failing and carry abort thresholds, with a delay so that early noise does not end the run.
 

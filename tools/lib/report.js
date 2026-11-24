@@ -66,8 +66,14 @@ export function renderReport(result) {
     `Load generator: CPU avg ${fmt(generator.cpuPercentAvg, 1)}% max ${fmt(generator.cpuPercentMax, 1)}% ` +
       `(100% = one core, ${generator.cores} cores), memory max ${fmt(generator.rssMbMax, 0)} MB`,
   );
-  if (result.aborted)
-    lines.push('Run stopped early by an abort threshold; incomplete windows are excluded.');
+  if (result.aborted) {
+    lines.push(
+      'Run stopped early by an abort threshold; incomplete windows are excluded.',
+      `Offered load had reached about ${result.stoppedAt.approxRate}/s when it stopped ` +
+        `(${result.stoppedAt.seconds} s in, during ${result.stoppedAt.scenario}). ` +
+        'The breaking point is at or below this rate: abort thresholds react with a delay.',
+    );
+  }
   for (const breach of result.sloBreaches) lines.push(`SLO breach: ${breach}`);
   for (const reason of result.validity.reasons) lines.push(`INVALID: ${reason}`);
   const failedChecks = result.checks.filter((/** @type {any} */ c) => c.fails > 0);
