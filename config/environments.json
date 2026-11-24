@@ -1,0 +1,14 @@
+{
+  "local": {
+    "description": "Bundled mock service (node mock/server.js). The only target used while developing the harness.",
+    "baseUrl": "http://127.0.0.1:3333",
+    "allowedHosts": ["127.0.0.1", "localhost"],
+    "production": false
+  },
+  "staging": {
+    "description": "Template: the real host comes from the STAGING_BASE_URL and STAGING_HOST environment variables, never from this file.",
+    "baseUrl": "${STAGING_BASE_URL}",
+    "allowedHosts": ["${STAGING_HOST}"],
+    "production": false
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "smoke": {
+    "description": "Minimal load to prove the scripts, data and environment work. Run before anything else.",
+    "unit": "absolute",
+    "gate": true,
+    "stages": [{ "duration": "30s", "target": 2 }]
+  },
+  "average-load": {
+    "description": "Typical peak-hour load. The baseline for SLO verdicts and regression comparison.",
+    "unit": "peak-multiplier",
+    "gate": true,
+    "stages": [
+      { "duration": "5m", "target": 1.0, "ramp": true },
+      { "duration": "30m", "target": 1.0 },
+      { "duration": "2m", "target": 0, "ramp": true }
+    ]
+  },
+  "stress": {
+    "description": "Above-peak load to see how the system behaves and degrades beyond its expected maximum.",
+    "unit": "peak-multiplier",
+    "gate": false,
+    "abort": { "failedRate": 0.5, "p95Ms": 10000, "delay": "1m" },
+    "stages": [
+      { "duration": "5m", "target": 1.5, "ramp": true },
+      { "duration": "20m", "target": 1.5 },
+      { "duration": "2m", "target": 0, "ramp": true }
+    ]
+  },
+  "spike": {
+    "description": "Sudden burst far above peak, then back to normal, to check survival and recovery.",
+    "unit": "peak-multiplier",
+    "gate": false,
+    "abort": { "failedRate": 0.8, "p95Ms": 15000, "delay": "1m" },
+    "stages": [
+      { "duration": "2m", "target": 0.5 },
+      { "duration": "20s", "target": 3.0, "ramp": true },
+      { "duration": "2m", "target": 3.0 },
+      { "duration": "20s", "target": 0.5, "ramp": true },
+      { "duration": "5m", "target": 0.5 }
+    ]
+  },
+  "soak": {
+    "description": "Sustained load for hours to expose leaks, slow degradation and resource exhaustion.",
+    "unit": "peak-multiplier",
+    "gate": true,
+    "stages": [
+      { "duration": "5m", "target": 0.8, "ramp": true },
+      { "duration": "4h", "target": 0.8 },
+      { "duration": "2m", "target": 0, "ramp": true }
+    ]
+  },
+  "breakpoint": {
+    "description": "Continuous ramp until the system fails. Finds the ceiling quickly; the abort thresholds end the run.",
+    "unit": "peak-multiplier",
+    "gate": false,
+    "abort": { "failedRate": 0.2, "p95Ms": 3000, "delay": "30s" },
+    "stages": [{ "duration": "20m", "target": 5.0, "ramp": true }]
+  },
+  "capacity": {
+    "description": "Stair-step: hold each load level long enough to measure steady state. Input for capacity analysis.",
+    "unit": "peak-multiplier",
+    "gate": false,
+    "abort": { "failedRate": 0.4, "p95Ms": 10000, "delay": "1m" },
+    "steps": { "from": 0.4, "to": 3.0, "increment": 0.2, "hold": "3m", "transition": "30s" }
+  }
+}

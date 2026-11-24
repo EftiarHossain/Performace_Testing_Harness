@@ -1,0 +1,16 @@
+{
+  "service": "example",
+  "version": "1",
+  "description": "Example workload for the bundled mock service. One iteration is one transaction, chosen by weight.",
+  "peakRate": 100,
+  "maxIterationSeconds": 1,
+  "requestTimeout": "5s",
+  "transactions": [
+    { "name": "list_items", "weight": 50 },
+    { "name": "read_item", "weight": 35 },
+    { "name": "create_item", "weight": 10 },
+    { "name": "login", "weight": 5 }
+  ],
+  "thinkTime": { "minSeconds": 1, "maxSeconds": 3 },
+  "data": { "users": "users.json" }
+}

@@ -1,0 +1,6 @@
+{
+  "default": { "p95": 250, "p99": 400, "errorRate": 0.01 },
+  "transactions": {
+    "create_item": { "p95": 300, "p99": 500 }
+  }
+}

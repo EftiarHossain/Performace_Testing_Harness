@@ -21,7 +21,7 @@ Status values: `todo`, `in progress`, `done`. A milestone is `done` only when it
 
 - [x] **1. Skeleton and conventions** (done, iteration 2). Layout, `package.json`, TypeScript config with k6 types, lint and format, `.env.example`, `.gitignore`. Check: type-check and lint pass.
 - [x] **2. Mock service with a known capacity** (done, iteration 3). Dependency-free Node HTTP service (login, list, read, write), fixed worker pool and bounded queue, configurable. Check: starts, responds, and a quick overload shows 503s or latency growth near the designed limit.
-- [ ] **3. Core library** (todo). Environment and allowlist guard, workload model loader, SLO-to-threshold compiler, tagged HTTP client with checks, auth helper, `SharedArray` test data, think time, custom metrics. Check: unit tests pass, including the guard refusing a non-allowlisted host.
+- [x] **3. Core library** (done, iteration 4). Environment and allowlist guard, workload model loader, SLO-to-threshold compiler, tagged HTTP client with checks, auth helper, `SharedArray` test data, think time, custom metrics. Check: unit tests pass, including the guard refusing a non-allowlisted host.
 - [ ] **4. Profiles and entry script** (todo). Smoke, average-load, stress, spike, soak, breakpoint, stair-step capacity; one run wrapper. Check: smoke and a shortened average-load run pass against the mock with thresholds green.
 - [ ] **5. Results pipeline** (todo). `handleSummary`, normalised schema, run directory with metadata, validity verdict, generator resource capture. Check: a run produces a schema-valid result; an under-provisioned run is marked invalid.
 - [ ] **6. Baseline and regression compare** (todo). Check: self-compare passes; after slowing the mock, compare exits non-zero and names the regressed transactions.
@@ -37,6 +37,11 @@ Status values: `todo`, `in progress`, `done`. A milestone is `done` only when it
 - **Unit tests** use the built-in `node:test` runner; no test framework dependency.
 - **CI** is GitHub Actions (default from the brief; the user has not chosen otherwise).
 - **Tooling** (iteration 2): one `tsconfig.json` type-checks `src`, `tools`, `mock`, `test` with both k6 and Node types; ESLint flat config gives `src/` only k6 globals and the rest Node globals. Dev dependencies: typescript, @types/k6, @types/node, eslint, @eslint/js, typescript-eslint, globals, prettier.
+- **One iteration is one transaction** (iteration 4): the arrival rate is therefore transactions per second, which is the unit capacity is stated in. SLOs are judged on custom metrics `transaction_duration` (successful transactions only, so fast failures cannot flatter latency) and `transaction_failed` (transport error, unexpected status or failed check), not on `http_req_*`.
+- **Every stage is its own scenario** (iteration 4): k6's summary cannot window by time, so steady-state measurement needs a scenario per hold stage. SLO thresholds apply to `phase:steady` only.
+- **Gating versus exploratory profiles** (iteration 4): smoke, average-load and soak fail on SLO breach; stress, spike, breakpoint and capacity record the same metrics without gating (always-true thresholds, needed so k6 reports the submetrics) and carry abort thresholds instead.
+- **Config is JSON** (iteration 4): readable by both k6 (`open`) and Node with no parser dependency.
+- **Profiles are relative to the workload's `peakRate`** except smoke, which uses absolute rates.
 - **Mock capacity** will be `workers / serviceTime`; default sized well under what a laptop can generate so the generator is never the bottleneck.
 
 ## Verification log
@@ -54,9 +59,20 @@ Status values: `todo`, `in progress`, `done`. A milestone is `done` only when it
 
   No dropped iterations. Mock stats: served 7269, rejected 833, max queued 64. Saturation sits at the designed 200 req/s.
 
+- Iteration 4 (milestone 3): `npm run check` exit 0, 27 unit tests passed, including guard tests (non-allowlisted host refused even with the production override, lookalike hosts and `user@host` URLs refused, production refused without override, missing `production` flag treated as production). In-k6 checks with a scratch entry script importing every `src/lib/*.ts` module: `k6 inspect --include-system-env-vars` produced the expected smoke scenario and thresholds; the capacity profile produced 28 scenarios and 123 thresholds; with a staging URL whose host was not in the allowlist, k6 init failed with "Refusing to run: host ...". The k6-side modules (`http.ts`, `runner.ts`, `auth.ts`, `data.ts`, `pacing.ts`) are type-checked and load in k6 but have not yet executed requests; that happens in milestone 4.
+
 ## Notes for the next iteration
 
-- Start milestone 3 (core library).
+- Start milestone 4: `src/services/example.ts` (transactions `list_items`, `read_item`, `create_item`, `login`), `src/main.ts` (entry: `loadContext()`, `export const options`, `setup()` logging users in with `loginAll`, default function calling `runIteration`), and `tools/run.js` (wrapper).
+- Architecture now in place (read the module header comments):
+  - Config: `config/environments.json`, `config/profiles.json`, `config/services/<service>/{workload,slo,users}.json`.
+  - Pure modules: `guard.js`, `workload.js`, `plan.js` (profile to k6 scenarios; every stage is its own scenario named `pNN_ramp` or `pNN_steady`, tagged `phase`), `thresholds.js` (SLOs to thresholds on `transaction_duration` and `transaction_failed`; `submetric()` builds the key names the results pipeline must read back), `duration.js`.
+  - k6 modules: `context.ts` (`loadContext()` returns environment, profile, workload, slo, plan, options), `http.ts` (client, checks), `runner.ts` (`runIteration`, `assertImplemented`), `metrics.ts`, `auth.ts`, `data.ts`, `pacing.ts`.
+- Run parameters reach k6 as environment variables: `HARNESS_ROOT` (absolute repo path), `HARNESS_ENV`, `HARNESS_SERVICE`, `HARNESS_PROFILE`, optional `HARNESS_TIME_SCALE` (0 to 1, shortens stages), `HARNESS_VU_OVERRIDE`, `HARNESS_ALLOW_PRODUCTION=true`. `k6 run` passes system environment variables to scripts by default; `k6 inspect` needs `--include-system-env-vars`.
+- The wrapper should: load `.env` with `process.loadEnvFile` (Node 20.12+), run the guard itself before spawning k6, compute the workload hash, set the variables above, and pass through k6's exit code. Record `timeScale` in run metadata so shortened runs are never mistaken for full ones.
+- The example mix gives the mock a designed capacity of 8 / (0.040 s x 0.95) = 210.5 transactions/s (mean cost 0.95), which is 2.1x the model's `peakRate` of 100.
+- Smoke compiles `dropped_iterations: count<=0` (1% of 60 planned iterations floors to 0). If smoke proves flaky on that, raise the floor to at least 1 in `compileThresholds` rather than loosening the 1% rule.
+- Unverified until milestone 4: whether a threshold on `dropped_iterations` passes when the metric is never emitted, and whether `exec.vu.metrics.tags.transaction` tags custom metrics as intended.
 - Mock facts: `node mock/server.js`, port 3333, env `MOCK_PORT`, `MOCK_WORKERS`, `MOCK_SERVICE_MS`, `MOCK_QUEUE_LIMIT`, `MOCK_JITTER`. Endpoints: `POST /auth/login` (JSON `username`, `password`; returns `token`), `GET /items`, `GET /items/:id` (1 to 1000), `POST /items` (JSON `name`, returns 201). All but login need `Authorization: Bearer <token>`. `/healthz` and `/__admin/stats` bypass the worker pool. Endpoint costs: login 1.5, list 1.0, read 0.5, write 2.0; `theoreticalCapacity(config, mix)` in `mock/pool.js` gives the designed capacity for a mix, and the capacity check in milestone 7 must use it with the example workload model's mix.
 - Mock behaviour to design around: latency stays flat (about 41 ms median) until very close to capacity, then jumps to about 350 ms as the queue fills, with 503s for the excess. So the knee is sharp; the stair-step profile needs steps on both sides of 200 req/s and fine enough near it (for example 20 req/s steps) to land within the 15% tolerance.
 - Successful throughput in the overloaded step read 204.5/s, slightly above 200, because the queue drains after the step ends. Analysis should count successful requests, not completed ones, and expect this small overshoot.
