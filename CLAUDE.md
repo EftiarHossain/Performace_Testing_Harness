@@ -24,7 +24,7 @@ test/          node:test unit tests
 results/       run directories (git-ignored)
 baselines/     stored baselines
 docs/          methodology, runbook, templates
-.github/       CI workflows
+.github/       CI workflows (PR smoke, scheduled regression compare)
 ```
 
 ## Conventions
@@ -54,6 +54,9 @@ Only commands listed here are known to work; add to this list as milestones land
 - `node tools/baseline.js save <run|latest>`: store a passing run as the baseline for its service, environment and profile.
 - `node tools/compare.js <run|latest>`: compare with the stored baseline. Exit 0 no regression, 1 regression, 2 not comparable. To see a regression locally, restart the mock with `MOCK_SERVICE_MS=60` and rerun the same profile.
 - `node tools/capacity.js <run|latest>`: capacity analysis of a stair-step run; writes `capacity-report.md`, `capacity.svg` and `capacity.json` into the run directory. Verification-sized: `node tools/run.js capacity --time-scale 0.04` (about 2 minutes), expected knee about 200/s on the default mock and about 100/s with `MOCK_WORKERS=4`.
+- `node tools/with-mock.js <command...>`: run a command with the mock started and stopped around it, for example `node tools/with-mock.js node tools/run.js smoke`. This is what CI uses.
+- `node tools/run.js <profile> --otel`: also stream metrics over OpenTelemetry (`K6_OTEL_*` variables, see `.env.example`).
+- Regenerate the committed mock baseline after changing the workload model or the average-load profile: `node tools/with-mock.js node tools/run.js average-load --time-scale 0.05 && node tools/baseline.js save latest`.
 - `k6 version`, `node --version`: environment check.
 
 ## Code placement
