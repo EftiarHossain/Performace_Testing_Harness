@@ -1,0 +1,5 @@
+{
+  "headroom": 0.3,
+  "minEfficiency": 0.95,
+  "sizing": { "growthFactor": 1.5, "redundantInstances": 1, "instancesTested": 1 }
+}

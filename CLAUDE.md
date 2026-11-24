@@ -53,6 +53,7 @@ Only commands listed here are known to work; add to this list as milestones land
 - When logging a run to a file, read only the report: `sed -n '/^Run 2/,$p' <log>`. k6 progress output is very long.
 - `node tools/baseline.js save <run|latest>`: store a passing run as the baseline for its service, environment and profile.
 - `node tools/compare.js <run|latest>`: compare with the stored baseline. Exit 0 no regression, 1 regression, 2 not comparable. To see a regression locally, restart the mock with `MOCK_SERVICE_MS=60` and rerun the same profile.
+- `node tools/capacity.js <run|latest>`: capacity analysis of a stair-step run; writes `capacity-report.md`, `capacity.svg` and `capacity.json` into the run directory. Verification-sized: `node tools/run.js capacity --time-scale 0.04` (about 2 minutes), expected knee about 200/s on the default mock and about 100/s with `MOCK_WORKERS=4`.
 - `k6 version`, `node --version`: environment check.
 
 ## Code placement

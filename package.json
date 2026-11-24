@@ -17,7 +17,8 @@
     "perf": "node tools/run.js",
     "mock": "node mock/server.js",
     "baseline": "node tools/baseline.js",
-    "compare": "node tools/compare.js"
+    "compare": "node tools/compare.js",
+    "capacity": "node tools/capacity.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
