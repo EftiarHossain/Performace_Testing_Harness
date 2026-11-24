@@ -28,7 +28,7 @@ Status values: `todo`, `in progress`, `done`. A milestone is `done` only when it
 - [x] **7. Capacity analysis** (done, iteration 8). Knee detection, USL fit, headroom, sizing, Markdown report with chart. Check: detected knee within 15% of the mock's designed capacity; changing the mock's capacity moves the knee; fitting code unit-tested on synthetic data.
 - [x] **8. Observability hooks and CI** (done, iteration 9). OpenTelemetry output config, server-metrics attachment hook, GitHub Actions workflows. Check: workflow files valid; smoke job commands run locally end to end.
 - [x] **9. Documentation** (done, iteration 10). README, methodology guide, onboarding runbook, test plan template, capacity report template, troubleshooting, k6 compatibility notes. Check: quick start followed verbatim from a clean clone works.
-- [ ] **10. Final acceptance** (todo). Clean clone: install, unit tests, smoke, baseline save and compare, stair-step and capacity report, all passing; repository review pass.
+- [x] **10. Final acceptance** (done, iteration 11). Clean clone: install, unit tests, smoke, baseline save and compare, stair-step and capacity report, all passing; repository review pass.
 
 ## Decisions
 
@@ -117,33 +117,44 @@ Status values: `todo`, `in progress`, `done`. A milestone is `done` only when it
   - Quick start followed verbatim from a clean `git clone` into the scratchpad, in README order: `npm ci` 0; `cp .env.example .env` 0; smoke 0 (PASS); `average-load --time-scale 0.05` 0 (PASS); `compare.js latest` 0 (NO REGRESSION); slowed mock (`MOCK_SERVICE_MS=60`) run 0, compare 1 (REGRESSION in all four transactions, as the README says); `capacity --time-scale 0.04` 0; `capacity.js latest` 0 with knee 200.0/s and the report, chart and JSON written. Total 373 s, so the README says about six minutes.
   - Not checked: the onboarding runbook's steps for a second, real service were not executed (only the `example` service exists); they describe the same code paths the example uses.
 
-## Notes for the next iteration
+- Iteration 11 (milestone 10):
+  - Review pass. Removed: unused `randomRow` (`src/lib/data.ts`), test-only `mixShares` (`src/lib/workload.js`), five npm script aliases the docs never used, the empty `src/profiles/` directory, a duplicate `ROOT` in `tools/run.js`. Un-exported internals (`EXIT`, `table`, generator and achieved-fraction constants). Added: CLI argument tests (`parseCli` was exported but untested), a 0.1 s tolerance so a run that ends a few milliseconds short of the plan keeps its last window, and the load reached when an exploratory run is aborted (`result.stoppedAt`, shown in the report). `CLAUDE.md` layout corrected to the real tree. The think-time helper (`src/lib/pacing.ts`) is kept because the brief asks for it; it is unused by any profile, the docs say so, and it was executed once in k6 (iteration durations 113 to 186 ms for a 100 to 200 ms range).
+  - Profiles never executed before, now run at small time scales against the mock: `breakpoint --time-scale 0.05` exit 0, aborted by its threshold at 47.8 s with offered load at about 399/s; `spike --time-scale 0.1` exit 0, 300/s window served 216.9/s with 27.7% failed, and the final 50/s window recovered to 0% failed and p95 80 ms; `stress --time-scale 0.03` exit 0, 150/s served in full. The soak profile has not been executed (it differs from average-load only in rate and duration).
+  - Final acceptance from a clean `git clone` of commit `0a4c849` into the scratchpad: `npm ci` 0; `npm run check` 0 (69 tests, 0 failed); smoke 0 (PASS); `average-load --time-scale 0.05` 0 (PASS); compare with the committed baseline 0 (no regression); `baseline.js save latest` 0; second average-load 0; compare with the new baseline 0 (no regression); `capacity --time-scale 0.04` 0; `capacity.js latest` 0 with knee 200.1/s (designed 210.5/s), report and chart written. An earlier acceptance pass on commit `919d12a` gave the same results; it was repeated because the abort-reporting change came after it.
 
-- Start milestone 10 (final acceptance):
-  1. From a clean clone into a new scratchpad directory: `npm ci`, `npm run check`, smoke, baseline save and compare, stair-step and capacity report, all passing. Baseline save needs a fresh passing run: `node tools/with-mock.js node tools/run.js average-load --time-scale 0.05`, `node tools/baseline.js save latest`, then a second run and `node tools/compare.js latest`.
-  2. Review the whole repository once for dead code, inconsistent naming, and claims in the docs that the code does not back up, and fix what is found. Candidates to look at: `src/lib/pacing.ts` (`thinkTime`) and `workload.thinkTime` are exported and documented as a helper but unused by any profile; `randomRow` in `src/lib/data.ts`; `mixShares` in `src/lib/workload.js` (used only in tests?); the `EXIT` export and `parseCli` export in `tools/run.js`; `table` export in `tools/lib/report.js`; npm script aliases in `package.json` versus the commands the docs use; `CLAUDE.md` layout section versus the real tree (`tools/lib/`, `docs/templates/`); `.env.example` variables versus what the code reads (`HARNESS_ENV`).
-  3. Also run one stress or spike or breakpoint profile at a small time scale, since only smoke, average-load and capacity have ever been executed; note `delayAbortEval` values are not scaled by `--time-scale`.
-  4. When everything passes, write the closing summary here (what was built, what is verified, what is not), tell the user, and end the loop with `ScheduleWakeup stop: true`.
-- Do not write temporary files to `/tmp`, and do not `rm` with a shell-variable path (blocked by a safety check); use literal paths. Clean clones so far live under the session scratchpad as `ci-clone-1` and `quickstart-clone-1`; use a new directory name.
-- Results layout: `results/<UTC yyyymmdd-hhmmss>_<service>_<profile>/` with `result.json` (schema v1, see `tools/lib/result.js`: `run`, `verdict`, `gate`, `aborted`, `validity`, `sloBreaches`, `steadySeconds`, `transactions`, `windows`, `checks`), `k6-summary.json` (raw, minus setup data) and `generator-samples.json`.
-- Verdicts and wrapper exit codes: pass 0, fail 99, invalid 3, error (k6's own code), did not start 2. Invalid outranks fail. Exploratory profiles (`gate: false`) pass even when aborted by an abort threshold; windows that did not complete are marked `complete: false` and excluded.
-- k6 summary formats: on 1.6.1 the legacy object honours `summaryTrendStats` (p99, count); the machine-readable object on 1.6.1 has only avg/min/med/max/p90/p95 and no threshold results, so the harness does not pass `--new-machine-readable-summary`, derives counts from the `transaction_failed` rate metric (works in both formats) and takes the gate verdict from k6's exit code plus its own SLO evaluation. `tools/lib/summary.js` accepts either shape. If k6 2.x omits p99 from trends, p99 SLOs are still enforced by k6 thresholds but show as "-" in the report; note this in the compatibility docs.
-- When capturing run output to a log, print only from the report onwards: `sed -n '/^Run 2/,$p' file`. k6's progress output is thousands of lines.
-- Current run interface: `node tools/run.js <profile> [--env] [--service] [--time-scale] [--vus] [--allow-production]`. `.env` is loaded if present.
-- Adding a service: `config/services/<name>/{workload,slo}.json` plus data, `src/services/<name>.ts` exporting a factory, registered in `src/services/index.ts`.
-- The example mix gives the mock a designed capacity of 8 / (0.040 s x 0.95) = 210.5 transactions/s (mean cost 0.95), which is 2.1x the model's `peakRate` of 100.
-- Mock facts: `node mock/server.js`, port 3333, env `MOCK_PORT`, `MOCK_WORKERS`, `MOCK_SERVICE_MS`, `MOCK_QUEUE_LIMIT`, `MOCK_JITTER`. Endpoints: `POST /auth/login` (JSON `username`, `password`; returns `token`), `GET /items`, `GET /items/:id` (1 to 1000), `POST /items` (JSON `name`, returns 201). All but login need `Authorization: Bearer <token>`. `/healthz` and `/__admin/stats` bypass the worker pool. Endpoint costs: login 1.5, list 1.0, read 0.5, write 2.0; `theoreticalCapacity(config, mix)` in `mock/pool.js` gives the designed capacity for a mix, and the capacity check in milestone 7 must use it with the example workload model's mix.
-- Mock behaviour to design around: latency stays flat (about 41 ms median) until very close to capacity, then jumps to about 350 ms as the queue fills, with 503s for the excess. So the knee is sharp; the stair-step profile needs steps on both sides of 200 req/s and fine enough near it (for example 20 req/s steps) to land within the 15% tolerance.
-- Successful throughput in the overloaded step read 204.5/s, slightly above 200, because the queue drains after the step ends. Analysis should count successful requests, not completed ones, and expect this small overshoot.
-- Confirmed on k6 1.6.1: `.ts` scripts import relative `.js` and `.ts` modules (extensions required). Shared pure logic lives in `src/lib/*.js` with JSDoc types.
-- Confirmed on k6 1.6.1: `--summary-mode compact|full|disabled`, `--new-machine-readable-summary`, `--summary-export` exist. Without the new flag `handleSummary` gets the legacy shape. In milestone 5 enable the new machine-readable summary explicitly and normalise from it; dump the shape first to verify.
-- Per-scenario submetrics appear in the summary only when a threshold references them (for example `http_req_duration{scenario:step3}`), so the threshold compiler must emit a threshold for every submetric the analysis needs. Confirmed with the scratch script.
-- Prettier formats Markdown too, so run `npm run format` before committing docs.
+## Closing summary
+
+All ten milestones are complete and the build loop has ended (2026-11-24).
+
+**What was built.** A k6 harness for performance and capacity engineering: declarative workload models, SLOs and profiles; one entry script for seven profiles; a safety guard on targets; a results pipeline with its own schema, provenance and a validity verdict; baseline save and regression compare; capacity analysis (knee, ceiling, USL fit, headroom, sizing) with a Markdown and SVG report; OpenTelemetry export and a server-side metrics hook; two CI workflows; a mock service with a known capacity; 69 unit tests; documentation.
+
+**What is verified.** Everything in the verification log above, on k6 1.6.1, Node 20.20, macOS 14 arm64, against the bundled mock only. Final acceptance passed from a clean clone of the final code.
+
+**What is not verified.**
+
+- k6 2.x: written to be compatible, never run. The summary-format path is unit-tested against 1.6.1's version of the new format only.
+- GitHub Actions: workflow commands run locally; the workflows have never executed on GitHub, so action versions and runner behaviour are unchecked.
+- A real service: only the mock was ever loaded. The onboarding runbook has not been followed for a second service.
+- Full-length runs: every run used `--time-scale` except smoke. No full 37-minute average-load, 49-minute capacity or 4-hour soak run was made; the soak profile was never executed at any scale.
+- Linux, gRPC OpenTelemetry export, and distributed load generation.
+
+**Known weaknesses.**
+
+- Regression tolerances are starting values based on a handful of short runs on one laptop.
+- The breakpoint profile's abort reacts late: on the mock it stopped at about 399/s offered, against a real limit of 210/s. Use the capacity profile for a number; breakpoint only brackets it.
+- The knee is accurate to the step size (20/s on the example), and short holds overstate the ceiling.
+- USL describes the mock poorly (hard limit); the report says so when the fit is weak.
+- The capacity profile's many scenarios cost generator memory (about 770 MB on the example).
+
+## Future work
+
+- Run against k6 2.x and adjust `tools/lib/summary.js` if the summary shape differs.
+- Execute the workflows on GitHub Actions and fix whatever that shows.
+- A closed-model profile that uses the think-time helper, for systems where concurrency is what is modelled.
+- Median-of-N comparison, so one noisy run cannot flag or hide a regression.
+- Abort thresholds evaluated per window rather than on whole-run totals, so breakpoint stops closer to the limit.
+- Protocol clients beyond HTTP/JSON.
 
 ## Open questions for the user
 
 None blocking. Defaults assumed: HTTP/REST targets, GitHub Actions, no Docker.
-
-## Future work
-
-(empty)
