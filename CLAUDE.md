@@ -1,0 +1,45 @@
+# k6 Performance & Capacity Engineering Harness
+
+A reusable k6 harness for performance and capacity engineers. The build brief is `LOOP_PROMPT.md`; current status, decisions and verification history are in `PROGRESS.md`. Read `PROGRESS.md` before doing any work here.
+
+## Safety rules (always)
+
+- Generate load only against the local mock service on `localhost` unless the user explicitly names another target in the current session.
+- The harness must refuse hosts outside the selected environment's allowlist, and refuse `production` environments without the explicit override flag. Do not weaken this guard.
+- Secrets come from environment variables only. Never commit credentials, tokens or real hostnames.
+- Keep verification runs under about two minutes and laptop-sized.
+- Commit locally only. Never push and never add a remote.
+
+## Layout
+
+```
+config/        environments (allowlists), workload models, SLOs, profiles
+src/           k6 test code (TypeScript, run natively by k6)
+  lib/         core library; pure logic has no k6 imports so Node can test it
+  profiles/    smoke, average-load, stress, spike, soak, breakpoint, capacity
+  main.ts      single entry script, profile selected by parameter
+mock/          dependency-free Node service with a known, configurable capacity
+tools/         plain Node ESM: run wrapper, results normalise, compare, capacity
+test/          node:test unit tests
+results/       run directories (git-ignored)
+baselines/     stored baselines
+docs/          methodology, runbook, templates
+.github/       CI workflows
+```
+
+## Conventions
+
+- Target k6 1.6.1 and stay compatible with 2.x: no `externally-controlled` executor, no `--no-summary`, no legacy summary mode, no `options.ext.loadimpact`, no built-in Prometheus remote-write or InfluxDB outputs.
+- Never parse k6 console output. Results come from `handleSummary`, normalised into the harness's own versioned schema.
+- Open-model (arrival-rate) executors by default; every profile has a `dropped_iterations` threshold.
+- Latency is judged on percentiles, never averages. Every request carries a stable `transaction` tag.
+- Workload models, SLOs and environments are data in `config/`; scripts do not hard-code them.
+- No dependencies beyond types, lint and tests. Tools run on plain Node 20.
+- Comments explain why, not what.
+- Do not weaken a threshold, tolerance or acceptance check to make it pass.
+
+## Commands
+
+Commands are added here as each milestone lands; only commands listed here are known to work.
+
+- `k6 version`, `node --version`: environment check.
